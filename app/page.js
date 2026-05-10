@@ -23,6 +23,7 @@ import {
   MedicalServices,
   SupportAgent,
   PlayArrow,
+  LocationOn,
 } from '@mui/icons-material'
 
 const SLIDES = [
@@ -226,6 +227,25 @@ export default function Home() {
                     }}
                   >
                     Watch Farm Video
+                  </Button>
+
+                  <Button
+                    component={Link} href="/contact"
+                    startIcon={<LocationOn />}
+                    sx={{
+                      color: '#fff',
+                      px: { xs: 3, md: 3.5 }, py: 1.7,
+                      borderRadius: 999,
+                      fontSize: { xs: '0.95rem', md: '1rem' },
+                      fontWeight: 600, textTransform: 'none',
+                      backdropFilter: 'blur(10px)',
+                      bgcolor: 'rgba(255,255,255,0.12)',
+                      border: '1px solid rgba(255,255,255,0.22)',
+                      width: { xs: '100%', sm: 'auto' },
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' },
+                    }}
+                  >
+                    Find Us
                   </Button>
                 </Stack>
 
