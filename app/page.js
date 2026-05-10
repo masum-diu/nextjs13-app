@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Box,
@@ -23,6 +24,14 @@ import {
   SupportAgent,
   PlayArrow,
 } from '@mui/icons-material'
+
+const SLIDES = [
+  { image: 'https://i0.wp.com/knowanimal.com/wp-content/uploads/2020/06/Emu-Birds.jpg?fit=640%2C494&ssl=1', name: 'Emo Pakhi' },
+  { image: 'https://www.justnewsbd.com/np-uploads/content/images/2017December/1-20190121170148.jpg', name: 'OT Pakhi' },
+  { image: 'https://www.ajkerbazzar.com/wp-content/uploads/2019/01/horin.jpeg', name: 'Horin' },
+  { image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?q=80&w=1200&auto=format&fit=crop', name: 'Horgos' },
+]
+const SLIDE_IMAGES = SLIDES.map((s) => s.image)
 
 const features = [
   {
@@ -54,6 +63,20 @@ const stats = [
 ]
 
 export default function Home() {
+  const [imgIdx, setImgIdx]       = useState(0)
+  const [progress, setProgress]   = useState(0)
+
+  useEffect(() => {
+    setProgress(0)
+    const step   = 100 / 30          // 30 ticks over 3000ms → 100ms each
+    const ticker = setInterval(() => setProgress((p) => Math.min(p + step, 100)), 100)
+    const slider = setTimeout(() => {
+      setImgIdx((i) => (i + 1) % SLIDE_IMAGES.length)
+      setProgress(0)
+    }, 3000)
+    return () => { clearInterval(ticker); clearTimeout(slider) }
+  }, [imgIdx])
+
   return (
     <Box sx={{ bgcolor: '#F8FAF8' }}>
 
@@ -260,16 +283,48 @@ export default function Home() {
               }}>
                 <Box
                   component="img"
-                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=1200&auto=format&fit=crop"
-                  alt="Emo Pakhi"
-                  sx={{ width: '100%', height: 320, objectFit: 'cover' }}
+                  src={SLIDE_IMAGES[imgIdx]}
+                  alt="SN Agro Farm"
+                  sx={{
+                    width: '100%', height: 320, objectFit: 'cover',
+                    transition: 'opacity 0.6s ease',
+                  }}
                 />
-                <CardContent sx={{ p: 4 }}>
+
+                {/* PROGRESS BAR */}
+                <Box sx={{ height: 3, bgcolor: 'rgba(255,255,255,0.1)', position: 'relative' }}>
+                  <Box sx={{
+                    position: 'absolute', left: 0, top: 0, height: '100%',
+                    width: `${progress}%`,
+                    bgcolor: '#22C55E',
+                    boxShadow: '0 0 8px rgba(34,197,94,0.7)',
+                    transition: 'width 0.1s linear',
+                  }} />
+                </Box>
+
+                {/* DOT INDICATORS */}
+                <Box sx={{ display: 'flex', gap: 0.8, px: 2, py: 1.2 }}>
+                  {SLIDE_IMAGES.map((_, idx) => (
+                    <Box
+                      key={idx}
+                      onClick={() => setImgIdx(idx)}
+                      sx={{
+                        cursor: 'pointer', height: 3, borderRadius: 999,
+                        transition: 'all 0.3s ease',
+                        width: idx === imgIdx ? 24 : 8,
+                        bgcolor: idx === imgIdx ? '#22C55E' : 'rgba(255,255,255,0.25)',
+                        '&:hover': { bgcolor: idx === imgIdx ? '#22C55E' : 'rgba(255,255,255,0.5)' },
+                      }}
+                    />
+                  ))}
+                </Box>
+
+                <CardContent sx={{ p: 4, pt: 1 }}>
                   <Typography sx={{ color: '#22C55E', fontWeight: 700, mb: 1 }}>
                     Premium Collection
                   </Typography>
                   <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '2rem', lineHeight: 1.2 }}>
-                    Exotic Healthy Birds Available
+                    {SLIDES[imgIdx].name} Available
                   </Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.72)', mt: 2, lineHeight: 1.8 }}>
                     Professionally raised birds with proper nutrition, natural environment, and expert care support.
@@ -280,37 +335,43 @@ export default function Home() {
           </Grid>
         </Container>
 
-        {/* MOBILE BOTTOM CARD — floating preview */}
+        {/* MOBILE BOTTOM CARD — floating preview with slider */}
         <Box sx={{
           display: { xs: 'block', md: 'none' },
           position: 'relative', zIndex: 3,
-          mx: 2, mb: 3,
-          mt: -2,
+          mx: 2, mb: 3, mt: -2,
         }}>
           <Box sx={{
             borderRadius: 5, overflow: 'hidden',
             background: 'rgba(255,255,255,0.12)',
             backdropFilter: 'blur(18px)',
             border: '1px solid rgba(255,255,255,0.2)',
-            display: 'flex', alignItems: 'center', gap: 2,
-            p: 2,
           }}>
-            <Box
-              component="img"
-              src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=400&auto=format&fit=crop"
-              alt="Emo Pakhi"
-              sx={{ width: 72, height: 72, borderRadius: 3, objectFit: 'cover', flexShrink: 0 }}
-            />
-            <Box flex={1}>
-              <Typography sx={{ color: '#22C55E', fontWeight: 700, fontSize: '0.75rem', mb: 0.3 }}>
-                Premium Collection
-              </Typography>
-              <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1rem', lineHeight: 1.2 }}>
-                Exotic Healthy Birds
-              </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem', mt: 0.3 }}>
-                Available now · Nationwide delivery
-              </Typography>
+            {/* IMAGE ROW */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+              <Box
+                component="img"
+                src={SLIDES[imgIdx].image}
+                alt={SLIDES[imgIdx].name}
+                sx={{
+                  width: 72, height: 72, borderRadius: 3,
+                  objectFit: 'cover', flexShrink: 0,
+                  transition: 'opacity 0.5s ease',
+                }}
+              />
+              <Box flex={1}>
+                <Typography sx={{ color: '#22C55E', fontWeight: 700, fontSize: '0.75rem', mb: 0.3 }}>
+                  Premium Collection
+                </Typography>
+                <Typography sx={{
+                  color: '#fff', fontWeight: 800, fontSize: '1rem', lineHeight: 1.2,
+                  transition: 'opacity 0.4s ease',
+                }}>
+                  {SLIDES[imgIdx].name} Available
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem', mt: 0.3 }}>
+                  Available now · Nationwide delivery
+                </Typography>
             </Box>
             <Button
               component={Link} href="/explore"
@@ -323,8 +384,21 @@ export default function Home() {
               <ArrowForward sx={{ color: '#fff', fontSize: 18 }} />
             </Button>
           </Box>
+
+          {/* PROGRESS BAR */}
+          <Box sx={{ height: 3, bgcolor: 'rgba(255,255,255,0.1)', position: 'relative' }}>
+            <Box sx={{
+              position: 'absolute', left: 0, top: 0, height: '100%',
+              width: `${progress}%`,
+              bgcolor: '#22C55E',
+              boxShadow: '0 0 6px rgba(34,197,94,0.7)',
+              transition: 'width 0.1s linear',
+            }} />
+          </Box>
         </Box>
       </Box>
+
+      </Box>{/* ── END HERO ── */}
 
       {/* ── FEATURES ── */}
       <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: '#F8FAF8', mt: { xs: 0, md: -5 }, zIndex: 5, position: 'relative' }}>
