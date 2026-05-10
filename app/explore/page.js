@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 
 import {
   Box,
   Button,
+  CircularProgress,
   Container,
   Drawer,
   Grid,
@@ -24,7 +25,6 @@ import {
   GridView,
 } from '@mui/icons-material'
 
-import { birds } from '../lib/birds'
 import { CATEGORY_TREE, matchesCatalogFilter } from '../lib/catalog'
 
 const BADGE_COLORS = {
@@ -41,12 +41,21 @@ export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState(null)
   const [activeSub, setActiveSub]           = useState(null)
   const [drawerOpen, setDrawerOpen]         = useState(false)
+  const [birds,     setBirds]               = useState([])
+  const [birdLoading, setBirdLoading]       = useState(true)
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
 
+  useEffect(() => {
+    fetch('/api/birds')
+      .then((r) => r.json())
+      .then((d) => setBirds(d.birds || []))
+      .finally(() => setBirdLoading(false))
+  }, [])
+
   const filteredBirds = useMemo(
     () => birds.filter((b) => matchesCatalogFilter(b, activeCategory, activeSub)),
-    [activeCategory, activeSub],
+    [birds, activeCategory, activeSub],
   )
 
   const countFor = (catId, subId = null) =>
@@ -183,6 +192,7 @@ export default function ExplorePage() {
                 setActiveCategory={setActiveCategory}
                 setActiveSub={setActiveSub}
                 countFor={countFor}
+                totalCount={birds.length}
               />
             </Box>
           </Grid>
@@ -270,6 +280,7 @@ export default function ExplorePage() {
                 setActiveCategory={(v) => { setActiveCategory(v); if (v === null) closeDrawer() }}
                 setActiveSub={(v) => { setActiveSub(v); if (v !== null) closeDrawer() }}
                 countFor={countFor}
+                totalCount={birds.length}
               />
             </Box>
 
@@ -340,6 +351,11 @@ export default function ExplorePage() {
             </Box>
 
             {/* GRID */}
+            {birdLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                <CircularProgress sx={{ color: '#22C55E' }} />
+              </Box>
+            ) : null}
             <Grid container spacing={3}>
               {filteredBirds.map((bird) => {
                 const badge = BADGE_COLORS[bird.badge] ?? { bg: '#22C55E', text: '#fff' }
@@ -494,14 +510,14 @@ const CAT_ICONS = {
   farm:    '🌾',
 }
 
-function FilterContent({ activeCategory, activeSub, setActiveCategory, setActiveSub, countFor }) {
+function FilterContent({ activeCategory, activeSub, setActiveCategory, setActiveSub, countFor, totalCount }) {
   return (
     <Stack spacing={1}>
       {/* ALL */}
       <SidebarBtn
         active={activeCategory === null}
         label="All Categories"
-        count={birds.length}
+        count={totalCount}
         onClick={() => { setActiveCategory(null); setActiveSub(null) }}
       />
 

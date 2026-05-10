@@ -26,13 +26,12 @@ import {
   LocationOn,
 } from '@mui/icons-material'
 
-const SLIDES = [
+const DEFAULT_SLIDES = [
   { image: 'https://i0.wp.com/knowanimal.com/wp-content/uploads/2020/06/Emu-Birds.jpg?fit=640%2C494&ssl=1', name: 'Emo Pakhi' },
   { image: 'https://www.justnewsbd.com/np-uploads/content/images/2017December/1-20190121170148.jpg', name: 'OT Pakhi' },
   { image: 'https://www.ajkerbazzar.com/wp-content/uploads/2019/01/horin.jpeg', name: 'Horin' },
   { image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?q=80&w=1200&auto=format&fit=crop', name: 'Horgos' },
 ]
-const SLIDE_IMAGES = SLIDES.map((s) => s.image)
 
 const features = [
   {
@@ -64,15 +63,29 @@ const stats = [
 ]
 
 export default function Home() {
-  const [imgIdx, setImgIdx]       = useState(0)
+  const [slides,   setSlides]     = useState(DEFAULT_SLIDES)
+  const [imgIdx,   setImgIdx]     = useState(0)
   const [progress, setProgress]   = useState(0)
+
+  useEffect(() => {
+    fetch('/api/birds')
+      .then((r) => r.json())
+      .then((d) => {
+        const birds = d.birds || []
+        if (birds.length >= 2) {
+          setSlides(birds.slice(0, 6).map((b) => ({ image: b.image, name: b.name, slug: b.slug })))
+          setImgIdx(0)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setProgress(0)
     const step   = 100 / 30          // 30 ticks over 3000ms → 100ms each
     const ticker = setInterval(() => setProgress((p) => Math.min(p + step, 100)), 100)
     const slider = setTimeout(() => {
-      setImgIdx((i) => (i + 1) % SLIDE_IMAGES.length)
+      setImgIdx((i) => (i + 1) % slides.length)
       setProgress(0)
     }, 3000)
     return () => { clearInterval(ticker); clearTimeout(slider) }
@@ -303,7 +316,7 @@ export default function Home() {
               }}>
                 <Box
                   component="img"
-                  src={SLIDE_IMAGES[imgIdx]}
+                  src={slides[imgIdx]?.image}
                   alt="SN Agro Farm"
                   sx={{
                     width: '100%', height: 320, objectFit: 'cover',
@@ -324,7 +337,7 @@ export default function Home() {
 
                 {/* DOT INDICATORS */}
                 <Box sx={{ display: 'flex', gap: 0.8, px: 2, py: 1.2 }}>
-                  {SLIDE_IMAGES.map((_, idx) => (
+                  {slides.map((_, idx) => (
                     <Box
                       key={idx}
                       onClick={() => setImgIdx(idx)}
@@ -344,7 +357,7 @@ export default function Home() {
                     Premium Collection
                   </Typography>
                   <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '2rem', lineHeight: 1.2 }}>
-                    {SLIDES[imgIdx].name} Available
+                    {slides[imgIdx]?.name} Available
                   </Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.72)', mt: 2, lineHeight: 1.8 }}>
                     Professionally raised birds with proper nutrition, natural environment, and expert care support.
@@ -371,8 +384,8 @@ export default function Home() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
               <Box
                 component="img"
-                src={SLIDES[imgIdx].image}
-                alt={SLIDES[imgIdx].name}
+                src={slides[imgIdx]?.image}
+                alt={slides[imgIdx]?.name}
                 sx={{
                   width: 72, height: 72, borderRadius: 3,
                   objectFit: 'cover', flexShrink: 0,
@@ -387,7 +400,7 @@ export default function Home() {
                   color: '#fff', fontWeight: 800, fontSize: '1rem', lineHeight: 1.2,
                   transition: 'opacity 0.4s ease',
                 }}>
-                  {SLIDES[imgIdx].name} Available
+                  {slides[imgIdx]?.name} Available
                 </Typography>
                 <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem', mt: 0.3 }}>
                   Available now · Nationwide delivery

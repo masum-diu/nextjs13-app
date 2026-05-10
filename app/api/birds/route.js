@@ -3,10 +3,21 @@ import { getServerSession } from 'next-auth'
 import { connectDB } from '../../lib/mongoose'
 import Bird from '../../lib/models/Bird'
 
-export async function GET() {
+export async function GET(req) {
   try {
     await connectDB()
-    const birds = await Bird.find().sort({ createdAt: -1 })
+
+    const { searchParams } = new URL(req.url)
+    const category = searchParams.get('category')
+    const sub      = searchParams.get('sub')
+    const search   = searchParams.get('search')
+
+    const query = { available: { $ne: false } }
+    if (category) query.categoryId    = category
+    if (sub)      query.subcategoryId = sub
+    if (search)   query.name = { $regex: search, $options: 'i' }
+
+    const birds = await Bird.find(query).sort({ createdAt: -1 })
     return NextResponse.json({ birds })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })

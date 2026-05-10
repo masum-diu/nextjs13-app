@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -10,7 +10,7 @@ import {
   Tab, Tabs, TextField, Typography,
 } from '@mui/material'
 import {
-  Add, Close, Delete, ExitToApp, Pets,
+  Add, Close, Delete, Edit, ExitToApp, Pets,
   Refresh, ShoppingBag, EggAlt,
 } from '@mui/icons-material'
 
@@ -24,11 +24,12 @@ export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  const [tab,     setTab]     = useState(0)
-  const [orders,  setOrders]  = useState([])
-  const [birds,   setBirds]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [addOpen, setAddOpen] = useState(false)
+  const [tab,        setTab]        = useState(0)
+  const [orders,     setOrders]     = useState([])
+  const [birds,      setBirds]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [addOpen,    setAddOpen]    = useState(false)
+  const [editBird,   setEditBird]   = useState(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/admin/login')
@@ -115,6 +116,25 @@ export default function AdminPage() {
               </Box>
             </Stack>
             <Stack direction="row" gap={1}>
+              <Button
+                onClick={async () => {
+                  if (!confirm('Migrate static birds to database?')) return
+                  const res  = await fetch('/api/seed', { method: 'POST' })
+                  const data = await res.json()
+                  alert(`Done! Inserted: ${data.inserted}, Skipped: ${data.skipped}`)
+                  fetchBirds()
+                }}
+                size="small"
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)',
+                  borderRadius: 999, textTransform: 'none',
+                  fontWeight: 600, fontSize: '0.82rem',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  px: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)', color: '#fff' },
+                }}
+              >
+                Seed Birds
+              </Button>
               <Button
                 onClick={() => setAddOpen(true)}
                 startIcon={<Add />}
@@ -300,50 +320,88 @@ export default function AdminPage() {
                       borderRadius: 4, overflow: 'hidden',
                       bgcolor: 'rgba(255,255,255,0.04)',
                       border: '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex', flexDirection: 'column',
+                      transition: '0.2s',
+                      '&:hover': { border: '1px solid rgba(34,197,94,0.25)', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' },
                     }}>
-                      <Box
-                        component="img"
-                        src={bird.image}
-                        alt={bird.name}
-                        sx={{ width: '100%', height: 160, objectFit: 'cover' }}
-                      />
-                      <Box sx={{ p: 2 }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                          <Box>
-                            <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
-                              {bird.name}
-                            </Typography>
-                            <Typography sx={{ color: '#22C55E', fontSize: '0.78rem', mt: 0.3 }}>
-                              {bird.categoryId} · {bird.origin}
-                            </Typography>
-                            {bird.price && (
-                              <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.82rem', mt: 0.5 }}>
-                                {bird.price}
-                              </Typography>
-                            )}
-                            {bird.badge && (
-                              <Chip label={bird.badge} size="small"
-                                sx={{ mt: 1, bgcolor: '#22C55E', color: '#000', fontWeight: 700, fontSize: '0.7rem', height: 20 }} />
-                            )}
-                          </Box>
-                          <IconButton
-                            onClick={() => deleteBird(bird._id)}
-                            size="small"
-                            sx={{ color: 'rgba(255,100,100,0.5)', '&:hover': { color: '#F87171' } }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Stack>
+                      {/* IMAGE */}
+                      <Box sx={{ position: 'relative' }}>
+                        <Box
+                          component="img"
+                          src={bird.image}
+                          alt={bird.name}
+                          sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
+                        />
+                        {bird.badge && (
+                          <Chip label={bird.badge} size="small" sx={{
+                            position: 'absolute', top: 10, left: 10,
+                            bgcolor: '#22C55E', color: '#000',
+                            fontWeight: 700, fontSize: '0.7rem', height: 22,
+                          }} />
+                        )}
+                      </Box>
+
+                      {/* INFO */}
+                      <Box sx={{ p: 2, flex: 1 }}>
+                        <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1rem', mb: 0.3 }}>
+                          {bird.name}
+                        </Typography>
+                        <Typography sx={{ color: '#22C55E', fontSize: '0.75rem' }}>
+                          {bird.categoryId}{bird.origin ? ` · ${bird.origin}` : ''}
+                        </Typography>
+                        {bird.price && (
+                          <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontWeight: 600, mt: 0.5 }}>
+                            {bird.price}
+                          </Typography>
+                        )}
                         {bird.description && (
                           <Typography sx={{
                             color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem',
-                            mt: 1.5, lineHeight: 1.5,
+                            mt: 1, lineHeight: 1.5,
                             display: '-webkit-box', WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical', overflow: 'hidden',
                           }}>
                             {bird.description}
                           </Typography>
                         )}
+                      </Box>
+
+                      {/* ACTION BAR */}
+                      <Box sx={{
+                        display: 'flex', gap: 1, p: 1.5, pt: 0,
+                      }}>
+                        <Button
+                          onClick={() => setEditBird(bird)}
+                          startIcon={<Edit sx={{ fontSize: 15 }} />}
+                          fullWidth
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(34,197,94,0.12)',
+                            color: '#22C55E',
+                            border: '1px solid rgba(34,197,94,0.2)',
+                            borderRadius: 2, textTransform: 'none',
+                            fontWeight: 600, fontSize: '0.8rem',
+                            '&:hover': { bgcolor: 'rgba(34,197,94,0.22)' },
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => deleteBird(bird._id)}
+                          startIcon={<Delete sx={{ fontSize: 15 }} />}
+                          fullWidth
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(248,113,113,0.08)',
+                            color: '#F87171',
+                            border: '1px solid rgba(248,113,113,0.2)',
+                            borderRadius: 2, textTransform: 'none',
+                            fontWeight: 600, fontSize: '0.8rem',
+                            '&:hover': { bgcolor: 'rgba(248,113,113,0.18)' },
+                          }}
+                        >
+                          Delete
+                        </Button>
                       </Box>
                     </Box>
                   </Grid>
@@ -357,6 +415,16 @@ export default function AdminPage() {
 
       {/* ADD BIRD DIALOG */}
       <AddBirdDialog open={addOpen} onClose={() => { setAddOpen(false); fetchBirds() }} />
+
+      {/* EDIT BIRD DIALOG */}
+      <EditBirdDialog
+        bird={editBird}
+        onClose={() => setEditBird(null)}
+        onSaved={(updated) => {
+          setBirds((prev) => prev.map((b) => b._id === updated._id ? updated : b))
+          setEditBird(null)
+        }}
+      />
     </Box>
   )
 }
@@ -594,6 +662,192 @@ function AddBirdDialog({ open, onClose }) {
           >
             {loading ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Add Bird'}
           </Button>
+        </Box>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function EditBirdDialog({ bird, onClose, onSaved }) {
+  const [form,    setForm]    = useState({})
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+  const [preview, setPreview] = useState('')
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    if (bird) {
+      setForm({
+        name:        bird.name        || '',
+        origin:      bird.origin      || '',
+        categoryId:  bird.categoryId  || 'local',
+        price:       bird.price       || '',
+        badge:       bird.badge       || '',
+        features:    (bird.features || []).join(', '),
+        description: bird.description || '',
+        image:       bird.image       || '',
+      })
+      setPreview(bird.image || '')
+      setError('')
+    }
+  }, [bird])
+
+  function handleChange(key) {
+    return (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  }
+
+  async function handleImageFile(file) {
+    if (!file) return
+    if (file.size > 1 * 1024 * 1024) { setError('Image must be under 1MB'); return }
+    setError(''); setUploading(true)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      const res  = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setForm((f) => ({ ...f, image: data.url }))
+      setPreview(data.url)
+    } catch (err) { setError(err.message) }
+    setUploading(false)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true); setError('')
+    try {
+      const payload = {
+        ...form,
+        images: [form.image],
+        features: form.features.split(',').map((s) => s.trim()).filter(Boolean),
+      }
+      const res  = await fetch(`/api/birds/${bird._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed')
+      onSaved(data.bird)
+    } catch (err) { setError(err.message) }
+    setLoading(false)
+  }
+
+  const menuProps = {
+    PaperProps: {
+      sx: {
+        bgcolor: '#0D1A0F', backgroundImage: 'none',
+        border: '1px solid rgba(255,255,255,0.1)',
+        '& .MuiMenuItem-root': {
+          color: '#fff',
+          '&:hover': { bgcolor: 'rgba(34,197,94,0.1)' },
+          '&.Mui-selected': { bgcolor: 'rgba(34,197,94,0.15)', color: '#22C55E' },
+        },
+      },
+    },
+  }
+
+  return (
+    <Dialog open={!!bird} onClose={onClose} maxWidth="sm" fullWidth
+      PaperProps={{ sx: { bgcolor: '#0D1A0F', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 4 } }}
+    >
+      <DialogTitle sx={{ color: '#fff', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#0D1A0F' }}>
+        <Box>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }}>Edit Bird</Typography>
+          <Typography sx={{ color: '#22C55E', fontSize: '0.78rem', fontWeight: 500 }}>{bird?.name}</Typography>
+        </Box>
+        <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+          <Close fontSize="small" />
+        </IconButton>
+      </DialogTitle>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+      <DialogContent sx={{ pt: 3, bgcolor: '#0D1A0F' }}>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Grid container spacing={2}>
+            {[
+              { key: 'name',     label: 'Bird Name *', required: true },
+              { key: 'origin',   label: 'Origin' },
+              { key: 'price',    label: 'Price' },
+              { key: 'badge',    label: 'Badge' },
+              { key: 'features', label: 'Features (comma separated)' },
+            ].map(({ key, label, required }) => (
+              <Grid size={{ xs: 12, sm: 6 }} key={key}>
+                <TextField fullWidth label={label} value={form[key] || ''}
+                  onChange={handleChange(key)} required={required}
+                  sx={fieldSx} size="small" />
+              </Grid>
+            ))}
+            <Grid size={12}>
+              <TextField fullWidth label="Category" value={form.categoryId || 'local'}
+                onChange={handleChange('categoryId')} select sx={fieldSx} size="small"
+                SelectProps={{ MenuProps: menuProps }}
+              >
+                <MenuItem value="premium">Premium</MenuItem>
+                <MenuItem value="local">Local</MenuItem>
+                <MenuItem value="farm">Farm</MenuItem>
+              </TextField>
+            </Grid>
+
+            {/* IMAGE */}
+            <Grid size={12}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem', mb: 1 }}>
+                Bird Image (max 1MB)
+              </Typography>
+              <Box sx={{ position: 'relative', borderRadius: 3, overflow: 'hidden', height: 150 }}>
+                {preview && (
+                  <Box component="img" src={preview} alt="preview"
+                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+                <Box component="label" sx={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  bgcolor: preview ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.04)',
+                  border: preview ? 'none' : '2px dashed rgba(255,255,255,0.15)',
+                  borderRadius: 3, cursor: 'pointer',
+                  opacity: preview ? 0 : 1,
+                  '&:hover': { opacity: 1, bgcolor: 'rgba(0,0,0,0.55)' },
+                  transition: 'opacity 0.2s',
+                }}>
+                  <input type="file" accept="image/*" hidden onChange={(e) => handleImageFile(e.target.files[0])} />
+                  {uploading
+                    ? <CircularProgress size={24} sx={{ color: '#22C55E' }} />
+                    : <Stack alignItems="center" gap={0.5}>
+                        <Edit sx={{ color: '#fff', fontSize: 22 }} />
+                        <Typography sx={{ color: '#fff', fontSize: '0.75rem' }}>Change Image</Typography>
+                      </Stack>
+                  }
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid size={12}>
+              <TextField fullWidth label="Description" value={form.description || ''}
+                onChange={handleChange('description')}
+                multiline rows={3} sx={fieldSx} size="small" />
+            </Grid>
+          </Grid>
+
+          {error && <Typography sx={{ color: '#F87171', fontSize: '0.82rem', mt: 2 }}>{error}</Typography>}
+
+          <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
+            <Button onClick={onClose} fullWidth
+              sx={{
+                py: 1.4, borderRadius: 999, textTransform: 'none', fontWeight: 600,
+                bgcolor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+              }}
+            >Cancel</Button>
+            <Button type="submit" fullWidth disabled={loading}
+              sx={{
+                py: 1.4, borderRadius: 999, textTransform: 'none', fontWeight: 700,
+                bgcolor: '#22C55E', color: '#fff',
+                '&:hover': { bgcolor: '#16A34A' },
+                '&:disabled': { bgcolor: 'rgba(34,197,94,0.4)' },
+              }}
+            >
+              {loading ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Save Changes'}
+            </Button>
+          </Stack>
         </Box>
       </DialogContent>
     </Dialog>

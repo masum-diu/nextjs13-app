@@ -1,11 +1,12 @@
 'use client'
 
-import { notFound } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Box,
   Button,
+  CircularProgress,
   Container,
   Grid,
   IconButton,
@@ -25,7 +26,6 @@ import {
   Verified,
   WhatsApp,
 } from '@mui/icons-material'
-import { birds } from '../../lib/birds'
 import BirdGalleryClient from './BirdGalleryClient'
 
 const PHONE = '01715103246'
@@ -41,11 +41,27 @@ const BADGE_COLORS = {
 }
 
 export default function BirdDetailsPage({ params }) {
-  const bird = birds.find((item) => item.slug === params.slug)
-  if (!bird) notFound()
+  const slug = params?.slug
 
-  const [contactOpen, setContactOpen] = useState(false)
-  const [copied, setCopied]           = useState(false)
+  const [bird,          setBird]          = useState(null)
+  const [suggestedBirds, setSuggested]   = useState([])
+  const [pageLoading,   setPageLoading]   = useState(true)
+  const [notFound,      setNotFound]      = useState(false)
+  const [contactOpen,   setContactOpen]   = useState(false)
+  const [copied,        setCopied]        = useState(false)
+
+  useEffect(() => {
+    if (!slug) return
+    Promise.all([
+      fetch(`/api/birds/slug/${slug}`).then((r) => r.json()),
+      fetch('/api/birds').then((r) => r.json()),
+    ]).then(([birdData, allData]) => {
+      if (birdData.error || !birdData.bird) { setNotFound(true); return }
+      setBird(birdData.bird)
+      const others = (allData.birds || []).filter((b) => b.slug !== slug).slice(0, 3)
+      setSuggested(others)
+    }).finally(() => setPageLoading(false))
+  }, [slug])
 
   const handleCopy = () => {
     navigator.clipboard.writeText(PHONE)
@@ -53,8 +69,20 @@ export default function BirdDetailsPage({ params }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  if (pageLoading) return (
+    <Box sx={{ minHeight: '100vh', bgcolor: '#060D08', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <CircularProgress sx={{ color: '#22C55E' }} />
+    </Box>
+  )
+
+  if (notFound) return (
+    <Box sx={{ minHeight: '100vh', bgcolor: '#060D08', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+      <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.5rem' }}>Bird Not Found</Typography>
+      <Button component={Link} href="/explore" sx={{ color: '#22C55E', textTransform: 'none' }}>← Back to Explore</Button>
+    </Box>
+  )
+
   const galleryImages  = bird.images?.length ? bird.images : [bird.image]
-  const suggestedBirds = birds.filter((item) => item.slug !== bird.slug).slice(0, 3)
   const badge          = BADGE_COLORS[bird.badge] ?? { bg: '#22C55E', text: '#fff' }
 
   return (
