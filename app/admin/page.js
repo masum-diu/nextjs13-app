@@ -115,8 +115,8 @@ export default function AdminPage() {
                 </Typography>
               </Box>
             </Stack>
-            <Stack direction="row" gap={1}>
-              <Button
+            <Stack direction="row" spacing={1}>
+              {/* <Button
                 onClick={async () => {
                   if (!confirm('Migrate static birds to database?')) return
                   const res  = await fetch('/api/seed', { method: 'POST' })
@@ -134,7 +134,7 @@ export default function AdminPage() {
                 }}
               >
                 Seed Birds
-              </Button>
+              </Button> */}
               <Button
                 onClick={() => setAddOpen(true)}
                 startIcon={<Add />}
@@ -221,76 +221,152 @@ export default function AdminPage() {
                   const sc = STATUS_COLORS[order.status] || STATUS_COLORS.new
                   return (
                     <Box key={order._id} sx={{
-                      p: 3, borderRadius: 4,
-                      bgcolor: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 3, overflow: 'hidden', position: 'relative',
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)',
+                      border: `1px solid ${sc.bg}28`,
+                      transition: 'all 0.25s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: `0 10px 40px ${sc.bg}18`,
+                        border: `1px solid ${sc.bg}55`,
+                      },
                     }}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} gap={2}>
-                        <Box flex={1}>
-                          <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                            <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>
-                              {order.name}
+                      {/* LEFT ACCENT BAR */}
+                      <Box sx={{
+                        position: 'absolute', left: 0, top: 0, bottom: 0,
+                        width: 4, bgcolor: sc.bg, borderRadius: '3px 0 0 3px',
+                      }} />
+
+                      {/* MAIN BODY */}
+                      <Box sx={{ pl: { xs: 2.5, sm: 3.5 }, pr: { xs: 2, sm: 2.5 }, pt: 2.5, pb: 0 }}>
+
+                        {/* TOP: avatar + name + date */}
+                        <Stack spacing={1.5} direction="row" alignItems="flex-start" gap={1.5} mb={1.5}>
+                          <Box sx={{
+                            width: 42, height: 42, borderRadius: '10px', flexShrink: 0,
+                            background: `linear-gradient(135deg, ${sc.bg}30, ${sc.bg}10)`,
+                            border: `1.5px solid ${sc.bg}40`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <Typography sx={{ color: sc.bg, fontWeight: 900, fontSize: '1.05rem', lineHeight: 1 }}>
+                              {order.name?.charAt(0).toUpperCase()}
                             </Typography>
-                            <Chip
-                              label={order.status}
-                              size="small"
-                              sx={{ bgcolor: sc.bg, color: sc.text, fontWeight: 700, fontSize: '0.7rem', height: 22 }}
-                            />
+                          </Box>
+
+                          <Box flex={1} minWidth={0} mt={0.3}>
+                            <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '0.96rem', letterSpacing: '-0.01em' }}>
+                                {order.name}
+                              </Typography>
+                              <Box sx={{
+                                px: 0.9, py: 0.15, borderRadius: '6px',
+                                bgcolor: sc.bg + '20', border: `1px solid ${sc.bg}45`,
+                              }}>
+                                <Typography sx={{ color: sc.bg, fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                                  {order.status}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                            <Typography sx={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.71rem', mt: 0.3 }}>
+                              {new Date(order.createdAt).toLocaleString('en-BD')}
+                            </Typography>
+                          </Box>
+                        </Stack>
+
+                        {/* DETAIL ROW: bird + phone */}
+                        <Stack direction="column" spacing={1} flexWrap="wrap" mb={1.5} sx={{ pl: 0.2 ,pt: 0.5 }}>
+                          <Stack direction="row" alignItems="center" spacing={0.6}>
+                            <Pets sx={{ fontSize: '0.82rem', color: '#22C55E' }} />
+                            <Typography sx={{ color: '#22C55E', fontSize: '0.82rem', fontWeight: 600 }}>
+                              {order.birdName || '—'}
+                            </Typography>
                           </Stack>
-                          <Typography sx={{ color: '#22C55E', fontWeight: 600, fontSize: '0.85rem' }}>
-                            {order.birdName}
-                          </Typography>
-                          <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.82rem', mt: 0.3 }}>
-                            {order.phone}
-                          </Typography>
-                          {order.message && (
-                            <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 0.5, fontStyle: 'italic' }}>
+                          <Stack direction="row" alignItems="center" spacing={0.6}>
+                            <Typography sx={{ fontSize: '0.75rem', lineHeight: 1 }}>📞</Typography>
+                            <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.82rem' }}>
+                              {order.phone}
+                            </Typography>
+                          </Stack>
+                        </Stack>
+
+                        {/* MESSAGE */}
+                        {order.message && (
+                          <Box sx={{
+                            mb: 2, px: 1.5, py: 1, borderRadius: 2,
+                            bgcolor: 'rgba(0,0,0,0.2)',
+                            borderLeft: `3px solid ${sc.bg}55`,
+                          }}>
+                            <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem', fontStyle: 'italic', lineHeight: 1.55 }}>
                               &ldquo;{order.message}&rdquo;
                             </Typography>
-                          )}
-                          <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem', mt: 1 }}>
-                            {new Date(order.createdAt).toLocaleString('en-BD')}
-                          </Typography>
-                        </Box>
+                          </Box>
+                        )}
+                      </Box>
 
-                        <Stack direction="row" alignItems="center" gap={1} flexShrink={0}>
-                          <Select
-                            value={order.status}
-                            onChange={(e) => updateStatus(order._id, e.target.value)}
-                            size="small"
-                            sx={{
-                              color: '#fff', fontSize: '0.8rem',
-                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.15)' },
-                              '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
-                              '& .MuiSelect-select': { py: 0.8, px: 1.5 },
-                            }}
-                          >
-                            <MenuItem value="new">New</MenuItem>
-                            <MenuItem value="contacted">Contacted</MenuItem>
-                            <MenuItem value="done">Done</MenuItem>
-                          </Select>
+                      {/* ACTION BAR */}
+                      <Stack
+                        direction="row" alignItems="center" spacing={1}
+                        sx={{
+                          px: { xs: 2, sm: 2.5 }, py: 1.2,
+                          mt: order.message ? 0 : 2,
+                          borderTop: '1px solid rgba(255,255,255,0.06)',
+                          bgcolor: 'rgba(0,0,0,0.18)',
+                        }}
+                      >
+                        <Select
+                          value={order.status}
+                          onChange={(e) => updateStatus(order._id, e.target.value)}
+                          size="small"
+                          sx={{
+                            color: sc.bg, fontSize: '0.78rem', borderRadius: 2, minWidth: 130,
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: sc.bg + '40' },
+                            '& .MuiSvgIcon-root': { color: sc.bg + 'aa' },
+                            '& .MuiSelect-select': { py: 0.65, px: 1.4 },
+                            bgcolor: sc.bg + '12',
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: sc.bg + '80' },
+                          }}
+                          MenuProps={{ PaperProps: { sx: {
+                            bgcolor: '#0D1A0F', backgroundImage: 'none',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            '& .MuiMenuItem-root': { color: '#fff', fontSize: '0.82rem',
+                              '&:hover': { bgcolor: 'rgba(34,197,94,0.1)' },
+                              '&.Mui-selected': { bgcolor: 'rgba(34,197,94,0.15)', color: '#22C55E' },
+                            },
+                          }}}}
+                        >
+                          <MenuItem value="new">🟢 New</MenuItem>
+                          <MenuItem value="contacted">🟡 Contacted</MenuItem>
+                          <MenuItem value="done">⚫ Done</MenuItem>
+                        </Select>
 
-                          <Button
-                            component="a" href={`tel:${order.phone}`}
-                            size="small"
-                            sx={{
-                              bgcolor: 'rgba(34,197,94,0.15)', color: '#22C55E',
-                              borderRadius: 999, textTransform: 'none',
-                              fontWeight: 600, fontSize: '0.78rem', px: 2, py: 0.7,
-                              '&:hover': { bgcolor: 'rgba(34,197,94,0.25)' },
-                            }}
-                          >
-                            Call
-                          </Button>
+                        <Box flex={1} />
 
-                          <IconButton
-                            onClick={() => deleteOrder(order._id)}
-                            size="small"
-                            sx={{ color: 'rgba(255,100,100,0.5)', '&:hover': { color: '#F87171' } }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Stack>
+                        <Button
+                          component="a" href={`tel:${order.phone}`}
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(34,197,94,0.12)', color: '#22C55E',
+                            border: '1px solid rgba(34,197,94,0.25)',
+                            borderRadius: 2, textTransform: 'none',
+                            fontWeight: 600, fontSize: '0.78rem', px: 2, py: 0.55,
+                            '&:hover': { bgcolor: 'rgba(34,197,94,0.22)', borderColor: '#22C55E' },
+                          }}
+                        >
+                          📞 Call
+                        </Button>
+
+                        <IconButton
+                          onClick={() => deleteOrder(order._id)}
+                          size="small"
+                          sx={{
+                            color: 'rgba(255,80,80,0.4)',
+                            border: '1px solid rgba(255,80,80,0.12)',
+                            borderRadius: 2, p: 0.7,
+                            '&:hover': { color: '#F87171', bgcolor: 'rgba(248,113,113,0.1)', borderColor: 'rgba(248,113,113,0.3)' },
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
                       </Stack>
                     </Box>
                   )
