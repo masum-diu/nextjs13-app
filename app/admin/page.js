@@ -245,7 +245,7 @@ export default function AdminPage() {
                           </Typography>
                           {order.message && (
                             <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 0.5, fontStyle: 'italic' }}>
-                              "{order.message}"
+                              &ldquo;{order.message}&rdquo;
                             </Typography>
                           )}
                           <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem', mt: 1 }}>

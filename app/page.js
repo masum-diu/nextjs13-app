@@ -82,14 +82,15 @@ export default function Home() {
 
   useEffect(() => {
     setProgress(0)
-    const step   = 100 / 30          // 30 ticks over 3000ms → 100ms each
+    const total  = slides.length
+    const step   = 100 / 30
     const ticker = setInterval(() => setProgress((p) => Math.min(p + step, 100)), 100)
     const slider = setTimeout(() => {
-      setImgIdx((i) => (i + 1) % slides.length)
+      setImgIdx((i) => (i + 1) % total)
       setProgress(0)
     }, 3000)
     return () => { clearInterval(ticker); clearTimeout(slider) }
-  }, [imgIdx])
+  }, [imgIdx, slides.length])
 
   return (
     <Box sx={{ bgcolor: '#F8FAF8' }}>
