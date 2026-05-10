@@ -1,48 +1,71 @@
 'use client'
 
 import { useState } from 'react'
-import { Box, Card, CardContent, Stack } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 
 export default function BirdGalleryClient({ images, birdName }) {
-  const galleryImages = images && images.length ? images : []
-  const [activeImage, setActiveImage] = useState(galleryImages[0] || '')
+  const gallery     = images?.length ? images : []
+  const [active, setActive] = useState(gallery[0] ?? '')
 
   return (
-    <Card
-      sx={{
-        borderRadius: 4,
-        border: '1px solid rgba(255,255,255,0.6)',
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.58), rgba(255,255,255,0.34))',
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 10px 30px rgba(15,23,42,0.1)',
-        overflow: 'hidden',
-      }}
-    >
-      {activeImage ? (
-        <Box component="img" src={activeImage} alt={birdName} sx={{ width: '100%', height: 430, objectFit: 'cover' }} />
-      ) : null}
-      <CardContent sx={{ p: 2.5 }}>
-        <Stack direction="row" gap={1} flexWrap="wrap">
-          {galleryImages.map((image, idx) => (
+    <Box>
+      {/* MAIN IMAGE */}
+      <Box sx={{
+        borderRadius: 5, overflow: 'hidden',
+        border: '1px solid rgba(255,255,255,0.08)',
+        position: 'relative',
+        mb: 2,
+      }}>
+        {active && (
+          <Box
+            component="img"
+            src={active}
+            alt={birdName}
+            sx={{
+              width: '100%',
+              height: { xs: 280, sm: 400, md: 500 },
+              objectFit: 'cover',
+              display: 'block',
+              transition: 'opacity 0.3s ease',
+            }}
+          />
+        )}
+        {/* BOTTOM FADE */}
+        <Box sx={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 100,
+          background: 'linear-gradient(to top, rgba(6,13,8,0.7), transparent)',
+          pointerEvents: 'none',
+        }} />
+      </Box>
+
+      {/* THUMBNAILS */}
+      {gallery.length > 1 && (
+        <Stack direction="row" spacing={1.5} flexWrap="wrap">
+          {gallery.map((img, idx) => (
             <Box
-              key={image}
+              key={img}
               component="img"
-              src={image}
+              src={img}
               alt={`${birdName} ${idx + 1}`}
-              onClick={() => setActiveImage(image)}
+              onClick={() => setActive(img)}
               sx={{
-                width: 90,
-                height: 66,
+                width: 80, height: 60,
                 objectFit: 'cover',
-                borderRadius: 1.5,
+                borderRadius: 2.5,
                 cursor: 'pointer',
-                border: activeImage === image ? '2px solid #2F855A' : '2px solid transparent',
-                opacity: activeImage === image ? 1 : 0.8,
+                display: 'block',
+                transition: '0.2s',
+                border: active === img
+                  ? '2px solid #22C55E'
+                  : '2px solid rgba(255,255,255,0.08)',
+                opacity: active === img ? 1 : 0.55,
+                boxShadow: active === img ? '0 0 12px rgba(34,197,94,0.4)' : 'none',
+                '&:hover': { opacity: 1, borderColor: 'rgba(34,197,94,0.5)' },
               }}
             />
           ))}
         </Stack>
-      </CardContent>
-    </Card>
+      )}
+    </Box>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import {
   Box,
   Button,
@@ -186,6 +187,7 @@ export default function Home() {
                     display: 'flex',
                     gap: 1.5,
                     flexWrap: 'wrap',
+                    pt: 0.5,
                   }}
                 >
                   <Chip
@@ -259,6 +261,8 @@ export default function Home() {
                   spacing={2}
                 >
                   <Button
+                    component={Link}
+                    href="/explore"
                     variant="contained"
                     endIcon={<ArrowForward />}
                     sx={{
@@ -281,6 +285,8 @@ export default function Home() {
                   </Button>
 
                   <Button
+                    component={Link}
+                    href="/videos"
                     startIcon={<PlayArrow />}
                     sx={{
                       color: '#fff',
