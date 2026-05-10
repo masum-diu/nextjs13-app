@@ -1,24 +1,67 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Box,
   Button,
+  CircularProgress,
   Container,
   Divider,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material'
 import {
   ArrowBack,
   Call,
+  CheckCircle,
   LocationOn,
+  Send,
   WhatsApp,
 } from '@mui/icons-material'
 
 const PHONE = '01715103246'
 
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    color: '#fff', borderRadius: 2,
+    '& fieldset':             { borderColor: 'rgba(255,255,255,0.12)' },
+    '&:hover fieldset':       { borderColor: 'rgba(255,255,255,0.25)' },
+    '&.Mui-focused fieldset': { borderColor: '#22C55E' },
+  },
+  '& .MuiInputLabel-root':             { color: 'rgba(255,255,255,0.4)' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#22C55E' },
+}
+
 export default function ContactPage() {
+  const [form,    setForm]    = useState({ name: '', phone: '', birdName: '', message: '' })
+  const [loading, setLoading] = useState(false)
+  const [sent,    setSent]    = useState(false)
+  const [error,   setError]   = useState('')
+
+  function handleChange(key) {
+    return (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error('Failed to send')
+      setSent(true)
+    } catch {
+      setError('Something went wrong. Please call us directly.')
+    }
+    setLoading(false)
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#060D08', position: 'relative', overflow: 'clip' }}>
 
@@ -223,6 +266,78 @@ export default function ContactPage() {
 
           </Box>
         </Stack>
+
+        {/* INQUIRY FORM */}
+        <Box sx={{
+          mt: { xs: 4, md: 5 },
+          borderRadius: 5,
+          background: 'rgba(255,255,255,0.04)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          p: { xs: 3, md: 4 },
+        }}>
+          <Typography sx={{ color: '#22C55E', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1 }}>
+            Quick Inquiry
+          </Typography>
+          <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: { xs: '1.3rem', md: '1.6rem' }, mb: 3 }}>
+            Send us a message
+          </Typography>
+
+          {sent ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <CheckCircle sx={{ color: '#22C55E', fontSize: 56, mb: 2 }} />
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
+                Inquiry sent!
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.5)', mt: 1, fontSize: '0.9rem' }}>
+                We will contact you soon on {form.phone}
+              </Typography>
+            </Box>
+          ) : (
+            <Box component="form" onSubmit={handleSubmit}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2}>
+                <TextField
+                  fullWidth label="Your Name *" value={form.name}
+                  onChange={handleChange('name')} required
+                  sx={fieldSx} size="small"
+                />
+                <TextField
+                  fullWidth label="Phone Number *" value={form.phone}
+                  onChange={handleChange('phone')} required
+                  sx={fieldSx} size="small"
+                />
+              </Stack>
+              <TextField
+                fullWidth label="Which bird are you interested in? *"
+                value={form.birdName} onChange={handleChange('birdName')}
+                required sx={{ ...fieldSx, mb: 2 }} size="small"
+              />
+              <TextField
+                fullWidth label="Message (optional)" value={form.message}
+                onChange={handleChange('message')}
+                multiline rows={3} sx={{ ...fieldSx, mb: 2 }} size="small"
+              />
+
+              {error && (
+                <Typography sx={{ color: '#F87171', fontSize: '0.82rem', mb: 2 }}>{error}</Typography>
+              )}
+
+              <Button
+                type="submit" disabled={loading}
+                endIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <Send />}
+                sx={{
+                  bgcolor: '#22C55E', color: '#fff',
+                  px: 4, py: 1.4, borderRadius: 999,
+                  fontWeight: 700, textTransform: 'none', fontSize: '0.95rem',
+                  '&:hover': { bgcolor: '#16A34A' },
+                  '&:disabled': { bgcolor: 'rgba(34,197,94,0.4)' },
+                }}
+              >
+                {loading ? 'Sending...' : 'Send Inquiry'}
+              </Button>
+            </Box>
+          )}
+        </Box>
 
       </Container>
     </Box>
